@@ -191,9 +191,10 @@ static UIImage *firefoxImage;
 		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
 		^{
 			if (firefoxImage == nil) {
-				NSURL *imageURL = [NSURL URLWithString:@"https://github.com/mozilla-mobile/firefox-ios/raw/master/Client/Assets/Images.xcassets/AppIcon.appiconset/ios-40@2x.png"];
-				firefoxImageData = [NSData dataWithContentsOfURL:imageURL];
-				firefoxImage = [UIImage imageWithData:firefoxImageData];
+				//NSURL *imageURL = [NSURL URLWithString:@"https://github.com/mozilla-mobile/firefox-ios/raw/master/Client/Assets/Images.xcassets/AppIcon.appiconset/ios-40@2x.png"];
+				//firefoxImageData = [NSData dataWithContentsOfURL:imageURL];
+				//firefoxImage = [UIImage imageWithData:firefoxImageData];
+				firefoxImage = [UIImage imageWithContentsOfFile:@"/var/mobile/Library/Application Support/FirefoxifyChrome/firefox-ios-40@2x.png"];
 			}
 
 			if (self.appIconView.image != firefoxImage) // the check cannot be done on before dispatch_async
@@ -206,5 +207,43 @@ static UIImage *firefoxImage;
 	}
 		
 	return org;
+}
+%end
+
+// Reddit
+// inspired by: https://github.com/lint/TFDidThatSay
+
+@interface PostActionSheetViewController : UIViewController
+@end
+
+@interface RUIActionSheetItem : NSObject
+@property(strong, nonatomic) UIImage *leftIconImage;
+@property(strong, nonatomic) NSString *identifier;
+- (void)setLeftIconImage:(UIImage *)arg1;
+- (void)setAttributedText:(id)arg1;
+@end
+
+%hook PostActionSheetViewController
+
+- (void)setItems:(id)arg1 {
+	for (RUIActionSheetItem *item in (NSArray *)arg1) {
+		if ([[item identifier] isEqualToString:@"kActionOpenInChromeID"]) {
+
+			// Text
+			[item setAttributedText:[[NSAttributedString alloc] initWithString:@"Open in Firefox"]];
+
+			// Image
+			UIImage* origImage = [UIImage imageWithContentsOfFile:@"/var/mobile/Library/Application Support/FirefoxifyChrome/firefox-256-dark.png"];
+
+			CGSize existingImageSize = [[item leftIconImage] size];
+			CGFloat scale = origImage.size.width / existingImageSize.width;
+
+			UIImage *newImage = [UIImage imageWithCGImage:[origImage CGImage] scale:scale orientation:origImage.imageOrientation];
+			[item setLeftIconImage:newImage];
+			break;
+		}
+	}
+
+	%orig;
 }
 %end
