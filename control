@@ -1,0 +1,9 @@
+Package: net.p0358.firefoxifychrome
+Name: FirefoxifyChrome
+Depends: mobilesubstrate
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: Fuck Google Chrome. All my homies use Firefox. This tweak will redirect all requests to open Chrome to Firefox. You do not need to install the former for this to work!
+Maintainer: p0358
+Author: p0358
+Section: Tweaks
