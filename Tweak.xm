@@ -1,61 +1,11 @@
-/* How to Hook with Logos
-Hooks are written with syntax similar to that of an Objective-C @implementation.
-You don't need to #include <substrate.h>, it will be done automatically, as will
-the generation of a class list and an automatic constructor.
-
-%hook ClassName
-
-// Hooking a class method
-+ (id)sharedInstance {
-	return %orig;
-}
-
-// Hooking an instance method with an argument.
-- (void)messageName:(int)argument {
-	%log; // Write a message about this call, including its class, name and arguments, to the system log.
-
-	%orig; // Call through to the original function with its original arguments.
-	%orig(nil); // Call through to the original function with a custom argument.
-
-	// If you use %orig(), you MUST supply all arguments (except for self and _cmd, the automatically generated ones.)
-}
-
-// Hooking an instance method with no arguments.
-- (id)noArguments {
-	%log;
-	id awesome = %orig;
-	[awesome doSomethingElse];
-
-	return awesome;
-}
-
-// Always make sure you clean up after yourself; Not doing so could have grave consequences!
-%end
-*/
-
 typedef NSString *UIApplicationOpenExternalURLOptionsKey;
 
 %hook UIApplication
-
-- (id)init {
-	id returnVal = %orig;
-	HBLogInfo(@"Method Name = %@", NSStringFromSelector(_cmd));
-	HBLogInfo(@"Bundle ID = %@", [[NSBundle mainBundle] bundleIdentifier]);
-	HBLogInfo(@"Return Argument = %@", returnVal);
-	//return %orig;
-	return returnVal;
-}
 
 - (BOOL)canOpenURL:(NSURL *)url {
 	// googlechrome: googlechromes:
 
 	HBLogDebug(@"canOpenURL: %@", url);
-
-/*dispatch_async(dispatch_get_main_queue(), ^{
-	NSString *title = [NSString stringWithFormat:@"canOpenURL: %@", url];
-	UIAlertView *alert = [[UIAlertView alloc] initWithTitle:title message:nil delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
-    [alert show];
-    });*/
 
 	if ([[url absoluteString] hasPrefix:@"googlechrome:"] || [[url absoluteString] hasPrefix:@"googlechromes:"])
 		return YES;
@@ -76,12 +26,6 @@ typedef NSString *UIApplicationOpenExternalURLOptionsKey;
 		url = [NSURL URLWithString:firefoxURL];
 	}
 
-	/*dispatch_async(dispatch_get_main_queue(), ^{
-		NSString *title = [NSString stringWithFormat:@"openURL: %@", url];
-		UIAlertView *alert = [[UIAlertView alloc] initWithTitle:title message:nil delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
-		[alert show];
-    });*/
-
 	return %orig;
 }
 
@@ -98,12 +42,6 @@ completionHandler:(void (^)(BOOL success))completion {
 		NSString *firefoxURL = [NSString stringWithFormat:@"firefox://open-url?url=%@", newURL];
 		url = [NSURL URLWithString:firefoxURL];
 	}
-
-	/*dispatch_async(dispatch_get_main_queue(), ^{
-		NSString *title = [NSString stringWithFormat:@"openURL2: %@", url];
-		UIAlertView *alert = [[UIAlertView alloc] initWithTitle:title message:nil delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
-		[alert show];
-    });*/
 
 	%orig;
 }
@@ -131,9 +69,6 @@ static NSDictionary *firefoxIcons = @{
 	@1024: @"https://github.com/mozilla-mobile/firefox-ios/raw/master/Client/Assets/Images.xcassets/AppIcon.appiconset/icon-apple-app-store.png"
 };
 
-@interface NSTaggedPointerString : NSString
-@end
-
 @interface GRWApp : NSObject
 {
 	BOOL _systemApp;
@@ -154,15 +89,12 @@ static NSDictionary *firefoxIcons = @{
 - (BOOL)isGoogleOwnedApp;
 - (BOOL)grw_isHostApp;
 - (BOOL)grw_isChrome;
-//- (id)name;
 - (NSString *)name;
-//- (NSTaggedPointerString *)name;
 - (id)bundleIdentifier;
 - (id)localizedName;
 - (id)tags;
 - (BOOL)isInstalled;
 - (NSInteger)priority;
-//- (id)iconURLs;
 - (NSDictionary *)iconURLs;
 - (id)storeID;
 - (BOOL)isPromoted;
@@ -173,9 +105,8 @@ static NSDictionary *firefoxIcons = @{
 @end
 
 %hook GRWApp
-
 - (BOOL)isGoogleOwnedApp {
-	//if ([[self bundleIdentifier] isEqualToString:@"org.mozilla.ios.Firefox"] || [[self bundleIdentifier] isEqualToString:@"com.google.chrome.ios"]) return NO;
+	//if ([[self bundleIdentifier] isEqualToString:@"org.mozilla.ios.Firefox"] || [[self bundleIdentifier] isEqualToString:@"com.google.chrome.ios"]) return NO; // I wanted to hide "Google, Inc.", but apparently changing this from code was hiding the app from the list...
 	if ([[self bundleIdentifier] isEqualToString:@"com.google.GoogleMobile"]) return NO; // this will hide Google annoyance, who would open urls in search app anyways???
 	return %orig;
 }
@@ -186,6 +117,7 @@ static NSDictionary *firefoxIcons = @{
 }
 
 - (BOOL)grw_isHostApp {
+	// YES would cause the app to be used regardless of user settings
 	//if ([[self bundleIdentifier] isEqualToString:@"org.mozilla.ios.Firefox"] || [[self bundleIdentifier] isEqualToString:@"com.google.chrome.ios"]) return YES;
 	return %orig;
 }
@@ -208,6 +140,7 @@ static NSDictionary *firefoxIcons = @{
 	return %orig;
 }
 
+// these are unused anyways, eh...
 - (NSDictionary *)iconURLs {
 	if ([[self bundleIdentifier] isEqualToString:@"org.mozilla.ios.Firefox"] || [[self bundleIdentifier] isEqualToString:@"com.google.chrome.ios"])
 		return firefoxIcons;
@@ -219,13 +152,9 @@ static NSDictionary *firefoxIcons = @{
 		return 15ul;
 	return %orig;
 }
-
 %end
 
-/*static NSString* firefoxAppIconPath() {
-	SBApplication* app = [[SBApplicationController sharedInstance] applicationWithBundleIdentifier:@"org.mozilla.ios.Firefox"];
-	return [NSString stringWithFormat:@"%@%@", [app bundleContainerPath], @"/Client.app/AppIcon60x60@2x.png"];
-}*/
+// YouTube
 
 @interface GRWAppCollectionViewCell : UIView
 {
@@ -244,49 +173,21 @@ static NSDictionary *firefoxIcons = @{
 - (GRWApp *)app;
 @end
 
-@interface GRWAppSwitcherCollectionViewCell : GRWAppCollectionViewCell
-@end
-
+// load them from the internet just once
 static NSData *firefoxImageData;
 static UIImage *firefoxImage;
 
-//%hook GRWAppSwitcherCollectionViewCell
 %hook GRWAppCollectionViewCell
 - (void)setSubtitleLabel:(UILabel *)arg1 {
 	/*[arg1 setText:@"test"];
 	%orig(arg1);*/
 }
+
 - (UILabel *)subtitleLabel {
 	UILabel *org = %orig;
 	if ([org.text isEqualToString:@"Google, Inc."]) {
 		[org setText:@"Mozilla"];
 
-		/*if (self.appIconView.image != firefoxImage)*/ dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-		^{
-			if (firefoxImage == nil) {
-				NSURL *imageURL = [NSURL URLWithString:@"https://github.com/mozilla-mobile/firefox-ios/raw/master/Client/Assets/Images.xcassets/AppIcon.appiconset/ios-40@2x.png"];
-				firefoxImageData = [NSData dataWithContentsOfURL:imageURL];
-				firefoxImage = [UIImage imageWithData:firefoxImageData];
-			}
-
-			if (self.appIconView.image != firefoxImage) dispatch_sync(dispatch_get_main_queue(), ^{
-					self.appIconView.image = firefoxImage;
-					[self.appIconView setNeedsDisplay];
-
-			});
-		});
-
-	}
-		
-	return org;
-}
-- (UIImageView *)appIconView {
-	return %orig;
-	UIImageView *org = %orig;
-	//static BOOL didChangeItAlready = NO;
-	//if (org.image != nil && firefoxImage != nil && org.image != firefoxImage) didChangeItAlready = NO;
-	if (/*!didChangeItAlready &&*/ [[[self app] bundleIdentifier] isEqualToString:@"org.mozilla.ios.Firefox"]) {
-		//didChangeItAlready = YES;
 		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
 		^{
 			if (firefoxImage == nil) {
@@ -295,53 +196,15 @@ static UIImage *firefoxImage;
 				firefoxImage = [UIImage imageWithData:firefoxImageData];
 			}
 
-			//This is your completion handler
-			if (self.appIconView.image != firefoxImage) dispatch_sync(dispatch_get_main_queue(), ^{
-				//If self.image is atomic (not declared with nonatomic)
-				// you could have set it directly above
-				//self.image = [UIImage imageWithData:imageData];
-
-				//This needs to be set here now that the image is downloaded
-				// and you are back on the main thread
-				//self.imageView.image = self.image;
-				//org.image = [UIImage imageWithData:imageData];
-				////[org setImage:[UIImage imageWithData:imageData]];
-				////[org setNeedsDisplay];
-				////[org reloadInputViews];
-
-				//self.appIconView.image = [UIImage imageWithData:firefoxImageData];
-				//if (self.appIconView.image != firefoxImage) {
-					self.appIconView.image = firefoxImage;
-					[self.appIconView setNeedsDisplay];
-				//}
-				
-				////[self.appIconView reloadInputViews];
-
-				//NSString *title = [NSString stringWithFormat:@"Got the image..."];
-				//UIAlertView *alert = [[UIAlertView alloc] initWithTitle:title message:nil delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
-				//[alert show];
-
-				//[self setAppIconView:org];
-
+			if (self.appIconView.image != firefoxImage) // the check cannot be done on before dispatch_async
+			dispatch_sync(dispatch_get_main_queue(), ^{
+				self.appIconView.image = firefoxImage;
+				[self.appIconView setNeedsDisplay];
 			});
 		});
-		
-		
 
 	}
-	///NSString *ImageURL = @"https://github.com/mozilla-mobile/firefox-ios/raw/master/Client/Assets/Images.xcassets/AppIcon.appiconset/ios-30.png";
-	////	NSData *imageData = [NSData dataWithContentsOfURL:[NSURL URLWithString:ImageURL]];
-	////	org.image = [UIImage imageWithData:imageData];
-		//[org setImage:[UIImage imageWithData:imageData]];
-		//[org setNeedsDisplay];
-		//[org reloadInputViews];
-	////	self.appIconView.image = [UIImage imageWithData:imageData];
+		
 	return org;
-}
-
-- (void)_updateView {
-	/*[self.subtitleLabel setText:@"test"];
-	[[self subtitleLabel] setText:@"test"];
-	self.subtitleLabel.hidden = YES;*/
 }
 %end
