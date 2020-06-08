@@ -1,5 +1,7 @@
 typedef NSString *UIApplicationOpenExternalURLOptionsKey;
 
+NSCharacterSet *customCharacterset = [[NSCharacterSet characterSetWithCharactersInString:@"!*'();:@&=+$,/?%#[]\\<>^`{|} "] invertedSet];
+
 %hook UIApplication
 
 - (BOOL)canOpenURL:(NSURL *)url {
@@ -21,7 +23,8 @@ typedef NSString *UIApplicationOpenExternalURLOptionsKey;
 	if ([[url absoluteString] hasPrefix:@"googlechrome:"] || [[url absoluteString] hasPrefix:@"googlechromes:"]) {
 		NSString *newURL = [[url absoluteString] stringByReplacingOccurrencesOfString:@"googlechrome:" withString:@"http:"];
 		newURL = [newURL stringByReplacingOccurrencesOfString:@"googlechromes:" withString:@"https:"];
-		newURL = [newURL stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
+		//newURL = [newURL stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
+		newURL = [newURL stringByAddingPercentEncodingWithAllowedCharacters:customCharacterset];
 		NSString *firefoxURL = [NSString stringWithFormat:@"firefox://open-url?url=%@", newURL];
 		url = [NSURL URLWithString:firefoxURL];
 	}
@@ -38,7 +41,8 @@ completionHandler:(void (^)(BOOL success))completion {
 	if ([[url absoluteString] hasPrefix:@"googlechrome:"] || [[url absoluteString] hasPrefix:@"googlechromes:"]) {
 		NSString *newURL = [[url absoluteString] stringByReplacingOccurrencesOfString:@"googlechrome:" withString:@"http:"];
 		newURL = [newURL stringByReplacingOccurrencesOfString:@"googlechromes:" withString:@"https:"];
-		newURL = [newURL stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLHostAllowedCharacterSet]];
+		//newURL = [newURL stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
+		newURL = [newURL stringByAddingPercentEncodingWithAllowedCharacters:customCharacterset];
 		NSString *firefoxURL = [NSString stringWithFormat:@"firefox://open-url?url=%@", newURL];
 		url = [NSURL URLWithString:firefoxURL];
 	}
@@ -239,7 +243,7 @@ static UIImage *firefoxImage;
 			CGFloat scale = origImage.size.width / existingImageSize.width;
 
 			UIImage *newImage = [UIImage imageWithCGImage:[origImage CGImage] scale:scale orientation:origImage.imageOrientation];
-			[item setLeftIconImage:newImage];
+			[item setLeftIconImage:newImage]; // in dark mode it will be automatically inverted by the app (to light icon)
 			break;
 		}
 	}
